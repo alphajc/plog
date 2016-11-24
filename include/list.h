@@ -46,6 +46,18 @@ list_remove(struct list *link)
 	link->next->prev = link->prev;
 }
 
+static inline void
+swap(struct list *list1, struct list *list2)
+{
+	struct list temp;
+	temp.next = list1->next;
+	temp.pre = list1->pre;
+	list1->next = list2->next;
+	list1->pre = list2->pre;
+	list2->next = temp.next;
+	list2->pre = temp.pre;
+}
+
 #define list_entry(link, type, member) \
 	((type *)((char *)(link)-(unsigned long)(&((type *)0)->member)))
 

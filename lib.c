@@ -52,6 +52,7 @@ static pthread_t thrd;        /* 打印线程的ID */
  * @description:根据level返回对应字符串
  * @return:对应字符串
  * @called by:libplog_write
+ * @author:Gavin
  *
  */
 static char *
@@ -74,6 +75,7 @@ get_level(log_level_t level)
  * @calls:get_block_string  pthread_cond_wait
  *        release_full_block
  * @called by:libplog_init
+ * @author:Gavin
  *
  */
 static void *
@@ -103,6 +105,7 @@ persistence(void *arg)
  *        memcpy        pthread_cond_signal
  * @param:log->待缓存的一条log
  * @called by:libplog_write
+ * @author:Gavin
  *
  */
 int plog_cache(const char *log)
@@ -134,6 +137,7 @@ int plog_cache(const char *log)
  *        line->产生日志的行数
  *        level->日志的级别
  *        msg,...->日志内容的格式化输出形式
+ * @author:Gavin
  */
 int
 libplog_write(const char *file_name, const char *func_name,
@@ -171,6 +175,7 @@ libplog_write(const char *file_name, const char *func_name,
  * @calls:memory_init       pthread_mutex_init
  *        pthread_cond_init open
  *        pthread_create    perror
+ * @author:Gavin
  */
 int
 libplog_init()
@@ -199,6 +204,7 @@ libplog_init()
  *        pthread_join          pthread_mutex_destroy
  *        pthread_cond_signal   pthread_cond_destroy
  *        close
+ * @author:Gavin
  *
  */
 int
