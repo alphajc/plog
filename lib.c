@@ -34,7 +34,6 @@
 #include <stdarg.h>
 #include <time.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -144,7 +143,7 @@ libplog_write(const char *file_name, const char *func_name,
 		const int line, log_level_t level, char *msg, ...)
 {
 	char log[MAX_SIZE] = {'\0'};
-	int len = 0;
+	size_t len = 0;
 	time_t t;
 	/* 获取时间	*/
 	time(&t);
@@ -198,9 +197,9 @@ libplog_init()
 }
 
 /*
- * @function:libplog_destory
+ * @function:libplog_destroy
  * @description:销毁当初所创建的，并且等待线程结束
- * @calls:update_current_block  memory_destory
+ * @calls:update_current_block  memory_destroy
  *        pthread_join          pthread_mutex_destroy
  *        pthread_cond_signal   pthread_cond_destroy
  *        close
@@ -208,13 +207,13 @@ libplog_init()
  *
  */
 int
-libplog_destrory()
+libplog_destroy()
 {
 	flag = 1;
 	update_current_block ();
 	pthread_cond_signal(&cond);
 	pthread_join(thrd, NULL);
-	memory_destory ();
+	memory_destroy();
 	pthread_mutex_destroy(&mutex);
 	pthread_cond_destroy(&cond);
 

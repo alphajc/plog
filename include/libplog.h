@@ -49,7 +49,7 @@ typedef enum {
  } log_level_t;
 
 int libplog_init ();
-int libplog_destrory ();
+int libplog_destroy();
 int libplog_write (const char *file_name, const char *func_name, 
 		const int line, log_level_t level, char *msg, ...);
 

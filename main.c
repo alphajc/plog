@@ -62,7 +62,7 @@ main()
 	{
 		pthread_join(thrd[j], NULL);
 	}
-	libplog_destrory ();
+	libplog_destroy ();
 	
 	return (0);
 }

@@ -27,7 +27,7 @@ static struct {
 static pthread_mutex_t alloc_mutex;
 
 /*
- * @function:get_free_list
+ * @function:get_free_block
  * @description:获取一个空闲的块
  * @calls:list_empty	malloc
  *				list_insert	list_remove
@@ -36,7 +36,7 @@ static pthread_mutex_t alloc_mutex;
  *
  */
 static struct block_node *
-get_free_list()
+get_free_block()
 {
 	int i;
     struct block_node *free;
@@ -62,7 +62,7 @@ get_free_list()
 }
 
 /*
- * @function:get_full_list
+ * @function:get_block_string
  * @description:获取一个写满的块
  * @calls:list_empty
  * @author:Gavin
@@ -86,7 +86,7 @@ get_block_string()
  * @function:memory_init
  * @description:初始化自分配内存，锁的初始化
  * @calls:list_init				list_insert
- *				get_free_list	pthread_mutex_init
+ *				get_free_block pthread_mutex_init
  * @author:Gavin
  *
  */
@@ -97,9 +97,7 @@ memory_init()
 	memory.block_count = BLOCK_COUNT;
 	memory.block_size = BLOCK_SIZE;
 	memory.used_size = 0;
-	memory.full_list.block = NULL;
 	list_init(&(memory.full_list));
-	memory.free_list.block = NULL;
 	list_init(&(memory.free_list));
 	for (i = 0; i < memory.block_count; ++i)
 	{
@@ -110,7 +108,7 @@ memory_init()
 		list_insert(&(memory.free_list), &(block_node_ptr->lst));
 	}
 
-	memory.current_block = get_free_list ();
+	memory.current_block = get_free_block ();
 	memory.begin = memory.current_block->block;
 
 	pthread_mutex_init(&alloc_mutex, NULL);
@@ -119,21 +117,21 @@ memory_init()
 }
 
 /*
- * @function:memory_destory
+ * @function:memory_destroy
  * @description:销毁内存，释放锁
  * @calls:free	list_remove pthread_mutex_destroy
  * @author:Gavin
  *
  */
 void
-memory_destory()
+memory_destroy()
 {
 	struct block_node *release = NULL;
 	/*
 	 * 程序执行完毕，已使用块都应当为空，所以只销毁空闲块和当前块
 	 *
 	 */
-	struct block_node *blck_node = &(memory.free_list);
+	struct block_node *blck_node = NULL;
 	list_for_each_entry(blck_node, &(memory.free_list), lst)
 	{
 		free(blck_node->block);
@@ -153,14 +151,14 @@ memory_destory()
 }
 
 /*
- * @function:release_full_list
+ * @function:release_full_block
  * @description:释放一块已写入磁盘的内存
  * @calls:list_remove	list_insert
  * @author:Gavin
  *
  */
 int
-release_full_list()
+release_full_block()
 {
 	struct block_node *wait_release;
 	wait_release = list_head(&(memory.full_list), struct block_node, lst);
@@ -174,7 +172,7 @@ release_full_list()
  * @function:update_current_block
  * @description:将当前块添加到full列表
  *				从free中取出一个作为current
- * @calls:list_insert	get_free_list
+ * @calls:list_insert	get_free_block
  * @called by:is_overflow_if_append
  * @author:Gavin
  *
@@ -185,7 +183,7 @@ update_current_block()
 	memory.used_size = 0;
 	*((char *)memory.begin) = '\0';
 	list_insert(&(memory.full_list), &(memory.current_block->lst));
-	memory.current_block = get_free_list ();
+	memory.current_block = get_free_block ();
 }
 
 /*

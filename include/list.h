@@ -51,11 +51,11 @@ swap(struct list *list1, struct list *list2)
 {
 	struct list temp;
 	temp.next = list1->next;
-	temp.pre = list1->pre;
+	temp.prev = list1->prev;
 	list1->next = list2->next;
-	list1->pre = list2->pre;
+	list1->prev = list2->prev;
 	list2->next = temp.next;
-	list2->pre = temp.pre;
+	list2->prev = temp.prev;
 }
 
 #define list_entry(link, type, member) \
