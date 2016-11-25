@@ -16,6 +16,9 @@ struct block_node {
 static struct {
     struct list 		free_list;		/* 空闲内存块链表 */
 	struct list 		full_list;		/* 已使用内存块链表 */
+	/**********************add 2016.11.24**************************/
+    struct list			writing_list;	/* 正在写盘的链表 */
+	/**********************add 2016.11.24**************************/
 	struct block_node*	current_block;	/* 当前使用块 */
     unsigned     block_size;			/* 每个内存块的大小 */
     unsigned     block_count;			/* 已申请内存块的总数 */
@@ -25,6 +28,16 @@ static struct {
 
 /* 先用互斥锁，以后修改为更合适的锁 */
 static pthread_mutex_t alloc_mutex;
+/**************add 2016.11.24**************/
+/* 锁full_list */
+static pthread_mutex_t g_full_mutex;
+/* 锁free_list */
+static pthread_mutex_t g_free_mutex;
+/* 条件变量（通告写盘） */
+static  pthread_cond_t g_write_cond;
+/**************add 2016.11.24**************/
+
+static int release_writing_list();
 
 /*
  * @function:get_free_block
@@ -51,12 +64,17 @@ get_free_block()
 			struct block_node *block_node_ptr =
 				(struct block_node *)malloc(sizeof(struct block_node));
 			block_node_ptr->block = block;
+
+			pthread_mutex_lock(&g_free_mutex);
 			list_insert(&(memory.free_list), &(block_node_ptr->lst));
+			pthread_mutex_unlock(&g_free_mutex);
 		}
 	}
 
+	pthread_mutex_lock(&g_free_mutex);
 	free = list_head(&(memory.free_list), struct block_node, lst);
 	list_remove (&(free->lst));
+	pthread_mutex_unlock(&g_free_mutex);
 
     return free;
 }
@@ -66,17 +84,39 @@ get_free_block()
  * @description:获取一个写满的块
  * @calls:list_empty
  * @author:Gavin
+ * @update: 2016.11.24 Gavin
  *
  */
 char *
-get_block_string()
+get_block_string(int * finished)
 {
 	char *ret = NULL;
-	struct block_node *full;
-	if (!list_empty (&(memory.full_list)))
+	static struct list *current_node = NULL;
+	if (NULL == current_node || current_node == &memory.writing_list)
 	{
-		full = list_head(&(memory.full_list), struct block_node, lst);
-		ret = (char *)full->block;
+        release_writing_list();
+		/* 等待通知从full取list，操作full */
+		pthread_mutex_lock(&g_full_mutex);
+		while (list_empty(&memory.full_list))
+		{
+ 			pthread_cond_wait(&g_write_cond, &g_full_mutex);
+		}
+		/* 将full迁移到writing */
+        if (list_empty(&memory.writing_list))
+		{
+			list_trans(&memory.writing_list, &memory.full_list);
+		}
+
+		pthread_mutex_unlock(&g_full_mutex);
+
+		current_node = memory.writing_list.next;
+        *finished = 0;
+	}
+	ret = (char *)(list_entry(current_node, struct block_node, lst)->block);
+	current_node = current_node->next;
+	if (current_node == &memory.writing_list)
+	{
+		*finished = 1;
 	}
 
     return ret;
@@ -88,6 +128,7 @@ get_block_string()
  * @calls:list_init				list_insert
  *				get_free_block pthread_mutex_init
  * @author:Gavin
+ * @update: 2016.11.24 Gavin
  *
  */
 int
@@ -99,6 +140,9 @@ memory_init()
 	memory.used_size = 0;
 	list_init(&(memory.full_list));
 	list_init(&(memory.free_list));
+	/*******************add 2016.11.24******************/
+	list_init(&(memory.writing_list));
+	/********************add 2016.11.24*****************/
 	for (i = 0; i < memory.block_count; ++i)
 	{
 		void *block = malloc(memory.block_size);
@@ -112,6 +156,11 @@ memory_init()
 	memory.begin = memory.current_block->block;
 
 	pthread_mutex_init(&alloc_mutex, NULL);
+	/***************add 2016.11.24*******************/
+	pthread_mutex_init(&g_full_mutex, NULL);
+	pthread_mutex_init(&g_free_mutex, NULL);
+	pthread_cond_init(&g_write_cond, NULL);
+	/***************add 2016.11.24*******************/
 
 	return 0;
 }
@@ -151,19 +200,20 @@ memory_destroy()
 }
 
 /*
- * @function:release_full_block
- * @description:释放一块已写入磁盘的内存
- * @calls:list_remove	list_insert
+ * @function: release_writing_list
+ * @description:释放正在写的内存
  * @author:Gavin
  *
  */
-int
-release_full_block()
+static int
+release_writing_list()
 {
-	struct block_node *wait_release;
-	wait_release = list_head(&(memory.full_list), struct block_node, lst);
-	list_remove (&(wait_release->lst));
-	list_insert (&(memory.free_list), &(wait_release->lst));
+	//判断writing_list是否为空
+	if (list_empty(&memory.writing_list))
+		return 0;
+	pthread_mutex_lock(&g_free_mutex);
+	list_connect(&memory.free_list, &memory.writing_list);
+	pthread_mutex_unlock(&g_free_mutex);
 
 	return 0;
 }
@@ -175,6 +225,7 @@ release_full_block()
  * @calls:list_insert	get_free_block
  * @called by:is_overflow_if_append
  * @author:Gavin
+ * @update: 2016.11.24 Gavin
  *
  */
 void
@@ -182,7 +233,13 @@ update_current_block()
 {
 	memory.used_size = 0;
 	*((char *)memory.begin) = '\0';
+
+	pthread_mutex_lock(&g_full_mutex);
 	list_insert(&(memory.full_list), &(memory.current_block->lst));
+	/* 通知writing_list取full_list */
+	pthread_cond_signal(&g_write_cond);
+	pthread_mutex_unlock(&g_full_mutex);
+
 	memory.current_block = get_free_block ();
 }
 
@@ -208,6 +265,7 @@ is_overflow_if_append(unsigned size)
 		ret = 1;
 		update_current_block ();
 		memory.begin = memory.current_block->block;
+		memory.used_size += size;
 	}
 
 	return ret;
@@ -220,6 +278,7 @@ is_overflow_if_append(unsigned size)
  * @calls:pthread_mutex_lock	is_overflow_if_append
  *				pthread_mutex_unlock
  * @author:Gavin
+ * @update: 2016.11.24 Gavin
  *
  */
 void *
@@ -230,14 +289,11 @@ memory_alloc(unsigned size)
 	pthread_mutex_lock(&alloc_mutex);
 
 	ret = memory.begin;
-	if(!is_overflow_if_append (size))
+	if(is_overflow_if_append (size))
 	{
-		memory.begin = (void *)((char *)memory.begin + size);
+        ret = memory.begin;
 	}
-	else
-	{
-		ret = NULL;
-	}
+	memory.begin = (void *)((char *)memory.begin + size);
 
 	pthread_mutex_unlock(&alloc_mutex);
 
