@@ -52,7 +52,8 @@ typedef enum {
 
 
 char *get_level(log_level_t level);
-int libplog_init (const char *log_path, const char *project_name, const unsigned log_num, const size_t log_size);
+int libplog_init (const char *log_path, const char *project_name,
+				  const unsigned log_num, const size_t log_size, const log_level_t print_level);
 int libplog_destroy();
 int libplog_write (log_level_t level, char *msg);
 

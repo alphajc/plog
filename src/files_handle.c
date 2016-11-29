@@ -39,7 +39,6 @@ generate_file_name(char *file_name)
             tv.tv_usec/1000,tv.tv_usec%1000);
     strncat(file_name, strtime, max_file_name_len);
     strncat(file_name, ".log", max_file_name_len);
-    printf("generate_file_name:%s\n", file_name);
 }
 
 const int 

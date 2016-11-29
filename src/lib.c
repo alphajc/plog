@@ -170,7 +170,8 @@ libplog_write(log_level_t level, char *msg)
  * @update: 2016.11.28 Gavin
  */
 int
-libplog_init(const char *log_path, const char *project_name, const unsigned log_num, const size_t log_size)
+libplog_init(const char *log_path, const char *project_name,
+			 const unsigned log_num, const size_t log_size, log_level_t print_level)
 {
 	memory_init ();
 
@@ -179,7 +180,7 @@ libplog_init(const char *log_path, const char *project_name, const unsigned log_
     set_project_name(project_name);
     set_log_num(log_num);
     set_log_size(log_size);
-	set_print_level(INFO);
+	set_print_level(print_level);
 
     log_fd = init_file();
 /*
