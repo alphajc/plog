@@ -40,6 +40,8 @@
  *---------------------
  */
 
+#include <sys/types.h>
+
 typedef enum {
 	 DEBUG = 1,
 	 INFO,
@@ -48,10 +50,10 @@ typedef enum {
 	 FATAL
  } log_level_t;
 
-int libplog_init ();
+int libplog_init (const char *log_path, const char *project_name, const unsigned log_num, const size_t log_size);
 int libplog_destroy();
 int libplog_write (const char *file_name, const char *func_name, 
-		const int line, log_level_t level, char *msg, ...);
+		const int line, log_level_t level, char *fmt, ...);
 
 /*
  * @description:调用libplog_write(),传入调试级别码

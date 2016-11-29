@@ -35,13 +35,13 @@
 void *
 print_log(void *arg)
 {
-	for(int i = 0; i < 10; ++i)
+	for(int i = 0; i < 100; ++i)
 	{	
-		PLOG_ERROR("：我是测试字符串 %s,第 %d次打印，我是线程%s\n","张鹏",i, (char *)arg);
-		PLOG_DEBUG("：我是测试字符串 %s,第 %d次打印，我是线程%s\n","灿灿",i, (char *)arg);
-		PLOG_INFO(" ：我是测试字符串 %s,第 %d次打印，我是线程%s\n","何敏",i, (char *)arg);
-		PLOG_FATAL("：我是测试字符串 %s,第 %d次打印，我是线程%s\n","小华",i, (char *)arg);
-		PLOG_WARN(" ：我是测试字符串 %s,第 %d次打印，我是线程%s\n","小玲",i, (char *)arg);
+		PLOG_ERROR("我是测试字符串 %s,第 %d次打印，我是线程%s\n","张鹏",i, (char *)arg);
+		PLOG_DEBUG("我是测试字符串 %s,第 %d次打印，我是线程%s\n","灿灿",i, (char *)arg);
+		PLOG_INFO("我是测试字符串 %s,第 %d次打印，我是线程%s\n","何敏",i, (char *)arg);
+		PLOG_FATAL("我是测试字符串 %s,第 %d次打印，我是线程%s\n","小华",i, (char *)arg);
+		PLOG_WARN("我是测试字符串 %s,第 %d次打印，我是线程%s\n","小玲",i, (char *)arg);
 	}
 
 	return NULL;
@@ -53,7 +53,7 @@ main()
 	pthread_t thrd[THRD_COUNT];
 	char thrdname[20][10]={"thread-A","thread-B","thread-C","thread-D","thread-E","thread-F","thread-G","thread-H","thread-I","thread-J",
 						   "thread-K","thread-L","thread-M","thread-N","thread-O","thread-P","thread-Q","thread-R","thread-S","thread-T"};
-	libplog_init ();
+	libplog_init (".", "test", 10, 1);
 	for(int j = 0; j < THRD_COUNT; ++j)
 	{
 		pthread_create(&thrd[j], NULL, print_log, (void *)thrdname[j]);

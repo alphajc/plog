@@ -46,7 +46,7 @@ list_remove(struct list *link)
 	link->next->prev = link->prev;
 }
 
-static inline void
+/*static inline void
 swap(struct list *list1, struct list *list2)
 {
 	struct list temp;
@@ -56,6 +56,37 @@ swap(struct list *list1, struct list *list2)
 	list1->prev = list2->prev;
 	list2->next = temp.next;
 	list2->prev = temp.prev;
+}*/
+/*
+ * @function: list_trans
+ * @description: 将list2传给list1，可被list_connect取代
+ * @author: Gavin
+ *
+ * */
+static inline void
+list_trans(struct list *list1, struct list *list2)
+{
+    list1->next = list2->next;
+    list1->prev = list2->prev;
+    list1->next->prev = list1;
+    list1->prev->next = list1;
+    list_init(list2);
+}
+
+/*
+ * @function: list_connect
+ * @description: 将list2连接到list1上
+ * @author: Gavin
+ *
+ * */
+static inline void
+list_connect(struct list *list1, struct list *list2)
+{
+	list2->next->prev = list1->prev;
+	list2->prev->next = list1;
+	list1->prev->next = list2->next;
+	list1->prev = list2->prev;
+    list_init(list2);
 }
 
 #define list_entry(link, type, member) \
