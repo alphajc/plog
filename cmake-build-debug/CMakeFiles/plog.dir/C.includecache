@@ -25,6 +25,12 @@ libplog.h
 /home/gavin/gitspace/plog/libplog.h
 pthread.h
 -
+stdio.h
+-
+memory.h
+-
+stdarg.h
+-
 
 /home/gavin/gitspace/plog/src/config.c
 config.h
@@ -62,8 +68,6 @@ libplog.h
 stdio.h
 -
 string.h
--
-stdarg.h
 -
 time.h
 -

@@ -50,39 +50,10 @@ typedef enum {
 	 FATAL
  } log_level_t;
 
+
+char *get_level(log_level_t level);
 int libplog_init (const char *log_path, const char *project_name, const unsigned log_num, const size_t log_size);
 int libplog_destroy();
-int libplog_write (const char *file_name, const char *func_name, 
-		const int line, log_level_t level, char *fmt, ...);
-
-/*
- * @description:调用libplog_write(),传入调试级别码
- */
-#define PLOG_DEBUG(msg, args...) \
-		libplog_write(__FILE__, __FUNCTION__, __LINE__, DEBUG,  msg, ##args)
-
-/*
- * @description:调用libplog_write(),传入提示级别码
- */
-#define PLOG_INFO(msg, args...) \
-		libplog_write(__FILE__, __FUNCTION__, __LINE__, INFO,  msg, ##args)
-
-/*
- * @description:调用libplog_write(),传入警告级别码
- */
-#define PLOG_WARN(msg, args...) \
-		libplog_write(__FILE__, __FUNCTION__, __LINE__, WARN,  msg, ##args)
-
-/*
- * @description:调用libplog_write(),传入错误级别码
- */
-#define PLOG_ERROR(msg, args...) \
-		libplog_write(__FILE__, __FUNCTION__, __LINE__, ERROR,  msg, ##args)
-
-/*
- * @description:调用libplog_write(),传入崩溃级别码
- */
-#define PLOG_FATAL(msg, args...) \
-		libplog_write(__FILE__, __FUNCTION__, __LINE__, FATAL,  msg, ##args)
+int libplog_write (log_level_t level, char *msg);
 
 #endif /* endif */

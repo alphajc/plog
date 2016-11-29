@@ -7,8 +7,8 @@
 static char *log_path;      /* 设置日志路径 */
 static char *project_name;  /* 项目名称 */
 static int log_num = 10;    /* 日志文件数 */
-static size_t log_size = 1;    /* 每个日志文件大小，单位兆字节 */
-
+static size_t log_size = 1; /* 每个日志文件大小，单位兆字节 */
+static int  print_level = 1;      /* 打印日志的级别，默认debug */
 void
 set_project_name(char *name)
 {
@@ -54,4 +54,16 @@ const char
 *get_log_path()
 {
     return log_path;
+}
+
+void
+set_print_level(int level)
+{
+    print_level = level;
+}
+
+const int
+get_print_level()
+{
+    return print_level;
 }

@@ -33,13 +33,12 @@
 #include "libplog.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
 
 /* 最大的字符串长度加一 */
-#define MAX_SIZE 200
+#define MAX_SIZE 1024
 
 static int log_fd;            /* 日志文件描述符 */
 static int flag = 0;          /* 如果不会再打印日志了，置一 */
@@ -53,7 +52,7 @@ static pthread_t thrd;        /* 打印线程的ID */
  * @author:Gavin
  *
  */
-static char *
+char *
 get_level(log_level_t level)
 {
     switch(level)
@@ -133,25 +132,24 @@ int plog_cache(const char *log)
  * @author:Gavin
  */
 int
-libplog_write(const char *file_name, const char *func_name,
-		const int line, log_level_t level, char *fmt, ...)
+libplog_write(log_level_t level, char *msg)
 {
 	char log[MAX_SIZE] = {'\0'};
 	size_t len = 0;
 	time_t t;
+
+	if (level < get_print_level())
+	{
+		return 0;
+	}
+
 	/* 获取时间	*/
 	time(&t);
 	strftime( log, MAX_SIZE, "[%Y%m%d%H%M%S] ",localtime(&t) );
 
-	/* snprintf和vsnprintf，如果大于MAX_SIZE将被截断	*/
 	len = strlen(log);
-	snprintf(log + len, MAX_SIZE - len, "`%s`%s:%d %s\t", func_name,
-	         file_name, line, get_level(level));
-	len = strlen(log);
-	va_list arg_ptr;
-	va_start(arg_ptr, msg);
-	vsnprintf(log + len, MAX_SIZE - len, fmt, arg_ptr);
-	va_end(arg_ptr);
+    snprintf(log + len, MAX_SIZE - len, "%s", msg);
+
 	/* 缓存	*/
 	plog_cache(log);
 
@@ -181,6 +179,7 @@ libplog_init(const char *log_path, const char *project_name, const unsigned log_
     set_project_name(project_name);
     set_log_num(log_num);
     set_log_size(log_size);
+	set_print_level(INFO);
 
     log_fd = init_file();
 /*

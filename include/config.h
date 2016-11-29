@@ -15,5 +15,7 @@ void set_log_num(unsigned num);
 const int get_log_num();
 void set_log_size(size_t size);
 const int get_log_size();
+void set_print_level(int level);
+const int get_print_level();
 
 #endif //PLOG_CONFIG_H

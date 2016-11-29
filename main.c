@@ -29,8 +29,59 @@
  */
 #include "libplog.h"
 #include <pthread.h>
+#include <stdio.h>
+#include <memory.h>
+#include <stdarg.h>
 
-#define THRD_COUNT 20
+#define THRD_COUNT 	20
+#define MSG_SIZE		898
+
+/*
+ * @description:调用log_print(),传入调试级别码
+ */
+#define PLOG_DEBUG(msg, args...) \
+		log_print(__FILE__, __FUNCTION__, __LINE__, DEBUG,  msg, ##args)
+
+/*
+ * @description:调用log_print(),传入提示级别码
+ */
+#define PLOG_INFO(msg, args...) \
+		log_print(__FILE__, __FUNCTION__, __LINE__, INFO,  msg, ##args)
+
+/*
+ * @description:调用log_print(),传入警告级别码
+ */
+#define PLOG_WARN(msg, args...) \
+		log_print(__FILE__, __FUNCTION__, __LINE__, WARN,  msg, ##args)
+
+/*
+ * @description:调用log_print(),传入错误级别码
+ */
+#define PLOG_ERROR(msg, args...) \
+		log_print(__FILE__, __FUNCTION__, __LINE__, ERROR,  msg, ##args)
+
+/*
+ * @description:调用log_print(),传入崩溃级别码
+ */
+#define PLOG_FATAL(msg, args...) \
+		log_print(__FILE__, __FUNCTION__, __LINE__, FATAL,  msg, ##args)
+
+
+void log_print(const char *file_name, const char *func_name,
+			   const int line, log_level_t level, char *fmt, ...)
+{
+	size_t len = 0;
+	char msg[MSG_SIZE];
+	/* snprintf和vsnprintf，如果大于MAX_SIZE将被截断	*/
+	snprintf(msg, MSG_SIZE, "`%s`%s:%d %s\t", func_name,
+			 file_name, line, get_level(level));
+	va_list arg_ptr;
+	va_start(arg_ptr, fmt);
+	len = strlen(msg);
+	vsnprintf(msg + len, MSG_SIZE - len, fmt, arg_ptr);
+    libplog_write(level, msg);
+	va_end(arg_ptr);
+}
 
 void *
 print_log(void *arg)
